@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://your-railway-url.railway.app';
+const api = axios.create({
+  baseURL: 'https://web-production-b46fb.up.railway.app', // Railway backend
+});
 
 export const chatAPI = {
   sendMessage: async (message, conversationId) => {
