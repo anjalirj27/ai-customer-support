@@ -59,11 +59,12 @@ app = FastAPI(
 # CORS Middleware (for frontend to connect)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 👈 IMPORTANT FIX
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # from slowapi import Limiter
 # from slowapi.util import get_remote_address
