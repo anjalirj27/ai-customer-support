@@ -10,6 +10,10 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
+
+from app.core.seed_data import seed_demo_data
+from app.core.database import AsyncSessionLocal
+
 logger = logging.getLogger(__name__)
 
 
@@ -96,6 +100,12 @@ async def startup_event():
     print(f"Database: {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else 'configured'}")
     print(f"AI Provider: {settings.AI_PROVIDER}")
     print(f"CORS Origins: {settings.CORS_ORIGINS}")
+
+    await init_db()
+
+    # 👇 add demo data
+    async with AsyncSessionLocal() as db:
+        await seed_demo_data(db)
 
 
 @app.on_event("shutdown")
