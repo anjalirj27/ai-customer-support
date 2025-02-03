@@ -101,7 +101,7 @@ async def startup_event():
     print(f"AI Provider: {settings.AI_PROVIDER}")
     print(f"CORS Origins: {settings.CORS_ORIGINS}")
 
-    await init_db()
+    
 
     # 👇 add demo data
     async with AsyncSessionLocal() as db:
