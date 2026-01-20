@@ -11,9 +11,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
 
-from app.core.seed_data import seed_demo_data
-from app.core.database import AsyncSessionLocal
-
 logger = logging.getLogger(__name__)
 
 
@@ -103,10 +100,7 @@ async def startup_event():
 
     
 
-    # 👇 add demo data
-    async with AsyncSessionLocal() as db:
-        await seed_demo_data(db)
-
+   
 
 @app.on_event("shutdown")
 async def shutdown_event():
