@@ -65,22 +65,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+# from slowapi import Limiter
+# from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address)
-app.state.limiter = limiter
+# limiter = Limiter(key_func=get_remote_address)
+# app.state.limiter = limiter
 
-# Add to chat route
-from slowapi.errors import RateLimitExceeded
-from fastapi.responses import JSONResponse
+# # Add to chat route
+# from slowapi.errors import RateLimitExceeded
+# from fastapi.responses import JSONResponse
 
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    return JSONResponse(
-        status_code=429,
-        content={"error": "Too many requests. Please try again later."}
-    )
+# @app.exception_handler(RateLimitExceeded)
+# async def rate_limit_handler(request, exc):
+#     return JSONResponse(
+#         status_code=429,
+#         content={"error": "Too many requests. Please try again later."}
+#     )
 
 # Exception handlers
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
