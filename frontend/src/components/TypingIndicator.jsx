@@ -1,15 +1,15 @@
 import { Bot } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+const phrases = [
+  'Analyzing query',
+  'Routing to specialist',
+  'Searching database',
+  'Generating response',
+];
+
 const TypingIndicator = () => {
   const [text, setText] = useState('Analyzing query');
-  
-  const phrases = [
-    'Analyzing query',
-    'Routing to specialist',
-    'Searching database',
-    'Generating response',
-  ];
   
   useEffect(() => {
     let i = 0;
