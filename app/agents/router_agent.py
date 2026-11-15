@@ -1,10 +1,17 @@
-from typing import List, Dict, Any
+import json
+import logging
+from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.base_agent import BaseAgent
 from app.tools.base_tool import BaseTool
 from app.core.ai_client import ai_client
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+VALID_AGENTS = {"support", "order", "billing"}
+DEFAULT_AGENT = "support"
 
 
 class RouterAgent(BaseAgent):
@@ -68,29 +75,28 @@ Do not include any other text or markdown formatting."""
     async def route(
         self,
         message: str,
-        conversation_history: List[Dict[str, str]] = None
+        conversation_history: Optional[List[Dict[str, str]]] = None
     ) -> Dict[str, Any]:
         """
         Analyze message and determine which agent should handle it.
-        
+
         Args:
             message: User's message
             conversation_history: Previous messages for context
-            
+
         Returns:
             Dict with routing decision
         """
-        if conversation_history is None:
-            conversation_history = []
-        
+        conversation_history = conversation_history or []
+
         messages = [
             {"role": "system", "content": self.system_prompt}
         ]
-        
+
         # Add recent context (last 5 messages)
         messages.extend(conversation_history[-5:])
         messages.append({"role": "user", "content": message})
-        
+
         try:
             response = await self.ai_client.chat.completions.create(
                 model=settings.ai_model,
@@ -98,29 +104,55 @@ Do not include any other text or markdown formatting."""
                 temperature=0.3,  # Lower temp for consistent routing
                 max_tokens=200
             )
-            
-            content = response.choices[0].message.content.strip()
-            
-            # Parse JSON response
-            import json
-            # Remove markdown code blocks if present
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
-            
-            result = json.loads(content)
-            
-            return {
-                "agent": result.get("agent", "support"),
-                "confidence": result.get("confidence", 0.5),
-                "reasoning": result.get("reasoning", "")
-            }
-            
+
+            return parse_routing_decision(response.choices[0].message.content)
+
         except Exception as e:
-            # Default to support agent on error
+            logger.warning("Routing failed, defaulting to support agent: %s", e)
             return {
-                "agent": "support",
+                "agent": DEFAULT_AGENT,
                 "confidence": 0.5,
-                "reasoning": f"Routing error, defaulting to support: {str(e)}"
+                "reasoning": "Routing error, defaulting to support"
             }
+
+
+def parse_routing_decision(raw: Optional[str]) -> Dict[str, Any]:
+    """
+    Parse the router model's JSON reply into a validated routing decision.
+
+    Tolerates markdown code fences, and falls back to the support agent when the
+    reply is not valid JSON or names an unknown agent.
+    """
+    content = (raw or "").strip()
+
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0].strip()
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0].strip()
+
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError:
+        return {
+            "agent": DEFAULT_AGENT,
+            "confidence": 0.5,
+            "reasoning": "Unparseable routing response, defaulting to support"
+        }
+
+    if not isinstance(result, dict):
+        result = {}
+
+    agent = str(result.get("agent", DEFAULT_AGENT)).strip().lower()
+    if agent not in VALID_AGENTS:
+        agent = DEFAULT_AGENT
+
+    try:
+        confidence = min(max(float(result.get("confidence", 0.5)), 0.0), 1.0)
+    except (TypeError, ValueError):
+        confidence = 0.5
+
+    return {
+        "agent": agent,
+        "confidence": confidence,
+        "reasoning": str(result.get("reasoning", ""))
+    }

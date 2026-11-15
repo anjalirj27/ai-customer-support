@@ -1,10 +1,11 @@
+"""Smoke-test the multi-agent pipeline. Run with: python -m scripts.check_agents"""
 import asyncio
 from app.core.database import AsyncSessionLocal
 from app.services.agent_service import AgentService
 
 async def main():
     print("Testing multi agent system\n")
-    print("=*50")
+    print("=" * 50)
 
     async with AsyncSessionLocal() as db:
         agent_service = AgentService(db)

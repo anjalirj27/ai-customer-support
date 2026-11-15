@@ -1,6 +1,14 @@
+import logging
 from typing import Dict, Any
+from uuid import UUID
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.message import Message
 from app.tools.base_tool import BaseTool, ToolResult
+
+logger = logging.getLogger(__name__)
 
 
 class QueryConversationHistoryTool(BaseTool):
@@ -26,7 +34,33 @@ class QueryConversationHistoryTool(BaseTool):
         }
     
     async def execute(self, conversation_id: str, limit: int = 10) -> ToolResult:
-        return ToolResult(success=True, data={"messages": []})
+        try:
+            conv_id = UUID(str(conversation_id))
+        except ValueError:
+            return ToolResult(success=False, error="Invalid conversation_id")
+
+        limit = max(1, min(int(limit), 50))
+
+        try:
+            # Newest first so the limit keeps the most recent messages
+            stmt = (
+                select(Message)
+                .where(Message.conversation_id == conv_id)
+                .order_by(Message.created_at.desc())
+                .limit(limit)
+            )
+            result = await self.db.execute(stmt)
+            messages = list(reversed(result.scalars().all()))
+
+            return ToolResult(success=True, data={
+                "messages": [
+                    {"role": m.role.value, "content": m.content}
+                    for m in messages
+                ]
+            })
+        except Exception:
+            logger.exception("query_conversation_history failed")
+            return ToolResult(success=False, error="Could not retrieve conversation history")
 
 
 class SearchFAQTool(BaseTool):

@@ -112,7 +112,11 @@ ai-customer-support/
 ├── frontend/
 │   ├── src/
 │   └── index.html
+├── scripts/           # Manual smoke-test scripts (config, AI, agents)
+├── tests/             # Automated test suite (pytest)
 ├── requirements.txt
+├── requirements-dev.txt
+├── .env.example
 └── README.md
 ```
 
@@ -135,6 +139,8 @@ ai-customer-support/
 python -m venv venv
 source venv/bin/activate  # Windows: venv\\Scripts\\activate
 pip install -r requirements.txt
+
+cp .env.example .env      # then edit the values
 
 python create_database.py
 python create_tables.py
@@ -163,13 +169,43 @@ Frontend runs at:
 
 ##  Environment Variables
 
-Create a `.env` file in the root directory:
+Copy `.env.example` to `.env` in the root directory and edit it:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/customer_support
 AI_PROVIDER=groq
 GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL=llama-3.3-70b-versatile
+RATE_LIMIT_PER_MINUTE=20
+CORS_ORIGINS=["http://localhost:5173"]
+```
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `RATE_LIMIT_PER_MINUTE` | `20` | Chat requests per client IP per minute (HTTP 429 beyond that) |
+| `CORS_ORIGINS` | localhost `3000`/`5173` | JSON list. **Add your deployed frontend URL** in production |
+| `DEBUG` | `false` | When `true`, error responses include exception details |
+| `DATABASE_ECHO` | `false` | Log all SQL statements |
+
+The frontend reads the backend URL from `VITE_API_URL` (see `frontend/.env.example`).
+
+---
+
+##  Running Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The tests use an in-memory SQLite database and a fake LLM client, so no Postgres instance or API key is needed.
+
+Manual smoke tests against real services (need a configured `.env`):
+
+```bash
+python -m scripts.check_config
+python -m scripts.check_ai
+python -m scripts.check_agents
 ```
 
 ---
@@ -181,6 +217,7 @@ GROQ_MODEL=llama-3.3-70b-versatile
 * `POST /api/chat/messages` – Send a message
 * `GET /api/chat/conversations` – List conversations
 * `GET /api/chat/conversations/{id}` – Get conversation details
+* `DELETE /api/chat/conversations/{id}` – Delete a conversation
 
 ### Agents
 

@@ -3,7 +3,7 @@ import { MessageCircle } from 'lucide-react';
 import Message from './components/Message';
 import MessageInput from './components/MessageInput';
 import TypingIndicator from './components/TypingIndicator';
-import { chatAPI } from './services/api';
+import { chatAPI, getErrorMessage } from './services/api';
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -32,6 +32,12 @@ function App() {
       }]);
     } catch (err) {
       console.error(err);
+      setMessages(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: getErrorMessage(err),
+        isError: true
+      }]);
     } finally {
       setIsLoading(false);
     }
