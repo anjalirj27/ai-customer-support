@@ -1,3 +1,4 @@
+"""Smoke-test the AI provider connection. Run with: python -m scripts.check_ai"""
 import asyncio
 from app.core.ai_client import ai_client
 from app.core.config import settings

@@ -1,14 +1,21 @@
-from pydantic_settings import BaseSettings
 from typing import List, Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings and configuration"""
 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
     # Application
     APP_NAME: str = "AI Customer Support"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     ENVIRONMENT: str = "development"
 
     # Server
@@ -17,9 +24,10 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
-    DATABASE_ECHO: bool = True
+    DATABASE_ECHO: bool = False
 
     def model_post_init(self, __context):
+        # Always use the async driver, regardless of how the URL was supplied.
         if self.DATABASE_URL.startswith("postgresql://"):
             self.DATABASE_URL = self.DATABASE_URL.replace(
                 "postgresql://",
@@ -43,7 +51,7 @@ class Settings(BaseSettings):
     MAX_TOKENS: int = 1000
     TEMPERATURE: float = 0.7
 
-    # Rate Limiting
+    # Rate Limiting (requests per minute, per client IP)
     RATE_LIMIT_PER_MINUTE: int = 20
 
     # CORS
@@ -76,10 +84,6 @@ class Settings(BaseSettings):
         if self.AI_PROVIDER == "groq":
             return self.GROQ_BASE_URL
         return None
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()

@@ -1,7 +1,10 @@
-from typing import Dict, Any, List
+import logging
+from typing import Dict, Any, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents import RouterAgent, SupportAgent, OrderAgent, BillingAgent
+
+logger = logging.getLogger(__name__)
 
 class AgentService:
     """
@@ -17,7 +20,7 @@ class AgentService:
             "order":OrderAgent(db),
             "billing":BillingAgent(db)
         }
-    async def process_message(self,message: str, conversation_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
+    async def process_message(self,message: str, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """
         Process user message through multi-agent system.
         
@@ -59,7 +62,8 @@ class AgentService:
 
         
         except Exception as e:
-            #fallback to support agent on error
+            # fallback to support agent on error
+            logger.exception("Agent pipeline failed")
             return {
                 "content": "I apologize, but I encountered an error processing your request. How can I help you?",
                 "agent": "support",
@@ -72,7 +76,7 @@ class AgentService:
             
             }
     
-    def get_agent_info(self, agent_type: str = None) -> Dict[str, Any]:
+    def get_agent_info(self, agent_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Get information about available agents.
         

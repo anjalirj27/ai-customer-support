@@ -28,8 +28,10 @@ const Message = ({ message }) => {
         maxWidth: '70%',
         padding: '12px 16px',
         borderRadius: '12px',
-        background: isUser ? '#4F46E5' : 'white',
-        color: isUser ? 'white' : '#1F2937'
+        background: isUser ? '#4F46E5' : message.isError ? '#FEF2F2' : 'white',
+        color: isUser ? 'white' : message.isError ? '#991B1B' : '#1F2937',
+        whiteSpace: 'pre-wrap',
+        overflowWrap: 'anywhere'
       }}>
         {message.content}
         {message.agent_type && (
